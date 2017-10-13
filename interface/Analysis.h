@@ -46,7 +46,7 @@
 //
 
 namespace analysis {
-   namespace tools {
+   namespace core {
 
       class Analysis {
          public:
@@ -115,8 +115,8 @@ namespace analysis {
             // Trigger results
             void triggerResults(const std::string & path);
             int triggerResult(const std::string & trig);
-            int triggerL1Prescale(const std::string & trig);
-            int triggerHLTPrescale(const std::string & trig);
+            int triggerPrescale(const std::string & trig);
+            std::map<std::string,int> triggerPrescale(const std::vector<std::string> & trigs);
 
             // Generator Filter
             FilterResults generatorFilter(const std::string & path);
@@ -137,7 +137,7 @@ namespace analysis {
             
             // btag efficiencies
             void addBtagEfficiencies(const std::string & );
-            float btagEfficiency(const analysis::tools::Jet &, const int & rank = 0);
+            float btagEfficiency(const analysis::core::Jet &, const int & rank = 0);
             void  btagEfficienciesAlgo(const std::string & );
             void  btagEfficienciesFlavour(const std::string & );
             

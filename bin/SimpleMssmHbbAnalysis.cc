@@ -1,5 +1,8 @@
+#include "boost/program_options.hpp"
+#include "boost/algorithm/string.hpp"
 #include <string>
 #include <iostream>
+#include <fstream>
 #include <vector>
 
 #include "TFile.h" 
@@ -8,76 +11,69 @@
 #include "TH1.h" 
 
 #include "Analysis/Core/interface/Analysis.h"
+#include "Analysis/Core/bin/macro_config.h"
 
 using namespace std;
 using namespace analysis;
 using namespace analysis::core;
 
-
 // =============================================================================================   
 int main(int argc, char * argv[])
 {
-   bool isMC = true;
-   bool isbbb = true;
-   std::string inputList = "rootFileList.txt";
-   std::string outputRoot = "histograms.root";
-   std::string json = "json_2016g.txt";
-   int bWP = 1;
-   float btagcut[3] = {0.46,0.84,0.92};
-   // Cuts                                         // <<<<===== CMSDAS
-   float ptmin[3]   = { 100.0, 100.0, 40.0 };
-   float etamax[3]  = {   2.2,   2.2 , 2.2 };
-   float btagmin[3] = { btagcut[bWP], btagcut[bWP], btagcut[bWP]};
-   float nonbtag    = 0.46;
-   float dRmin      = 1.;
-   float detamax    = 1.55;
    
+   if ( macro_config(argc, argv) != 0 ) return -1;
    
    TH1::SetDefaultSumw2();  // proper treatment of errors when scaling histograms
    
+   // Cuts
+   float btagmin[3] = { btagwp_, btagwp_, btagwp_};
+   
    // Input files list
-   Analysis analysis(inputList);
+   Analysis analysis(inputlist_);
    
-   analysis.addTree<Jet> ("Jets","MssmHbb/Events/slimmedJetsPuppiReapplyJEC");
+   analysis.addTree<Jet> ("Jets","MssmHbb/Events/slimmedJetsPuppi");
    
-   std::vector<std::string> triggerObjects;
-   triggerObjects.push_back("hltL1sDoubleJetC100");
-   triggerObjects.push_back("hltDoubleJetsC100");
-   triggerObjects.push_back("hltBTagCaloCSVp014DoubleWithMatching");
-   triggerObjects.push_back("hltDoublePFJetsC100");
-   triggerObjects.push_back("hltDoublePFJetsC100MaxDeta1p6");
-
-//    for ( auto & obj : triggerObjects )
-//       analysis.addTree<TriggerObject> (obj,Form("MssmHbb/Events/selectedPatTrigger/%s",obj.c_str()));
+   for ( auto & obj : triggerObjects_ )
+   {
+      analysis.addTree<TriggerObject> (obj,Form("MssmHbb/Events/slimmedPatTrigger/%s",obj.c_str()));
+   }
    
-//   analysis.triggerResults("MssmHbb/Events/TriggerResults");
-//   std::string hltPath = "HLT_DoubleJetsC100_DoubleBTagCSV_p014_DoublePFJetsC100MaxDeta1p6_v";
+   analysis.triggerResults("MssmHbb/Events/TriggerResults");
    
+   if( !isMC_ ) analysis.processJsonFile(json_);
    
-   if( !isMC ) analysis.processJsonFile(json);
+   std::string sr_s = "SR";
+   if ( ! signalregion_ ) sr_s = "CR";
+   boost::algorithm::replace_last(outputRoot_, ".root", "_"+sr_s+".root"); 
    
-   TFile hout(outputRoot.c_str(),"recreate");
+   TFile hout(outputRoot_.c_str(),"recreate");
    
    std::map<std::string, TH1F*> h1;
    h1["n"]        = new TH1F("n" , "" , 30, 0, 30);
    h1["n_csv"]    = new TH1F("n_csv" , "" , 30, 0, 30);
    h1["n_ptmin20"]= new TH1F("n_ptmin20" , "" , 30, 0, 30);
    h1["n_ptmin20_csv"] = new TH1F("n_ptmin20_csv" , "" , 30, 0, 30);
-   for ( int i = 0 ; i < 3 ; ++i )
+   for ( int i = 0 ; i < njetsmin_ ; ++i )
    {
       h1[Form("pt_%i",i)]         = new TH1F(Form("pt_%i",i) , "" , 100, 0, 1000);
       h1[Form("eta_%i",i)]        = new TH1F(Form("eta_%i",i) , "" , 100, -5, 5);
       h1[Form("phi_%i",i)]        = new TH1F(Form("phi_%i",i) , "" , 100, -4, 4);
-      h1[Form("btag_%i",i)]       = new TH1F(Form("btag_%i",i) , "" , 100, 0, 1);
+      h1[Form("btag_%i",i)]       = new TH1F(Form("btag_%i",i) , "" , 500, 0, 1);
       
       h1[Form("pt_%i_csv",i)]     = new TH1F(Form("pt_%i_csv",i) , "" , 100, 0, 1000);
       h1[Form("eta_%i_csv",i)]    = new TH1F(Form("eta_%i_csv",i) , "" , 100, -5, 5);
       h1[Form("phi_%i_csv",i)]    = new TH1F(Form("phi_%i_csv",i) , "" , 100, -4, 4);
-      h1[Form("btag_%i_csv",i)]   = new TH1F(Form("btag_%i_csv",i) , "" , 100, 0, 1);
+      h1[Form("btag_%i_csv",i)]   = new TH1F(Form("btag_%i_csv",i) , "" , 500, 0, 1);
    }
    h1["m12"]     = new TH1F("m12"     , "" , 50, 0, 1000);
    h1["m12_csv"] = new TH1F("m12_csv" , "" , 50, 0, 1000);
    
+   
+   double mbb;
+   double weight;
+   TTree *tree = new TTree("MssmHbb_13TeV","");
+   tree->Branch("mbb",&mbb,"mbb/D");
+   tree->Branch("weight",&weight,"weight/D");
    
    // Analysis of events
    std::cout << "This analysis has " << analysis.size() << " events" << std::endl;
@@ -92,9 +88,9 @@ int main(int argc, char * argv[])
    // 6: btag (bbnb)
    int nsel[10] = { };
    int nmatch[10] = { };
-   
-   std::string prevFile = "";
-   for ( int i = 0 ; i < analysis.size() ; ++i )
+
+   if ( nevtmax_ < 0 ) nevtmax_ = analysis.size();
+   for ( int i = 0 ; i < nevtmax_ ; ++i )
    {
       int njets = 0;
       int njets_csv = 0;
@@ -103,26 +99,18 @@ int main(int argc, char * argv[])
       if ( i > 0 && i%100000==0 ) std::cout << i << "  events processed! " << std::endl;
       
       analysis.event(i);
-      if (! isMC )
+      if (! isMC_ )
       {
-         if ( analysis.run() == 279975)
-         {
-            if ( prevFile == "" || prevFile != analysis.fileName() )
-            {
-               prevFile = analysis.fileName();
-               std::cout << prevFile << std::endl;
-            }
-         }
          if (!analysis.selectJson() ) continue; // To use only goodJSonFiles
       }
       
-//      int triggerFired = analysis.triggerResult(hltPath);
-//      if ( !triggerFired ) continue;
+      int triggerFired = analysis.triggerResult(hltPath_);
+      if ( !triggerFired ) continue;
       
       ++nsel[0];
       
       // match offline to online
-//      analysis.match<Jet,TriggerObject>("Jets",triggerObjects,0.5);
+      analysis.match<Jet,TriggerObject>("Jets",triggerObjects_,0.5);
       
       // Jets - std::shared_ptr< Collection<Jet> >
       auto slimmedJets = analysis.collection<Jet>("Jets");
@@ -131,15 +119,15 @@ int main(int argc, char * argv[])
       {
          if ( slimmedJets->at(j).idLoose() ) selectedJets.push_back(&slimmedJets->at(j));
       }
-      if ( selectedJets.size() < 2 ) continue;
+      if ( (int)selectedJets.size() < njetsmin_ ) continue;
       
       ++nsel[1];
       
-      // Kinematic selection - 2 leading jets
-      for ( int j = 0; j < 2; ++j )
+      // Kinematic selection - 3 leading jets
+      for ( int j = 0; j < njetsmin_; ++j )
       {
          Jet * jet = selectedJets[j];
-         if ( jet->pt() < ptmin[j] || fabs(jet->eta()) > etamax[j] )
+         if ( jet->pt() < jetsptmin_[j] || fabs(jet->eta()) > jetsetamax_[j] )
          {
             goodEvent = false;
             break;
@@ -150,13 +138,13 @@ int main(int argc, char * argv[])
       
       ++nsel[2];
       
-      for ( int j1 = 0; j1 < 1; ++j1 )
+      for ( int j1 = 0; j1 < njetsmin_-1; ++j1 )
       {
          const Jet & jet1 = *selectedJets[j1];
-         for ( int j2 = j1+1; j2 < 2; ++j2 )
+         for ( int j2 = j1+1; j2 < njetsmin_; ++j2 )
          {
             const Jet & jet2 = *selectedJets[j2];
-            if ( jet1.deltaR(jet2) < dRmin ) goodEvent = false;
+            if ( jet1.deltaR(jet2) < drmin_ ) goodEvent = false;
          }
       }
       
@@ -164,7 +152,7 @@ int main(int argc, char * argv[])
       
       ++nsel[3];
       
-      if ( fabs(selectedJets[0]->eta() - selectedJets[1]->eta()) > detamax ) continue;
+      if ( fabs(selectedJets[0]->eta() - selectedJets[1]->eta()) > detamax_ ) continue;
       
       ++nsel[4];
       
@@ -178,7 +166,7 @@ int main(int argc, char * argv[])
       
       h1["n"] -> Fill(selectedJets.size());
       h1["n_ptmin20"] -> Fill(njets);
-      for ( int j = 0; j < 2; ++j )
+      for ( int j = 0; j < njetsmin_; ++j )
       {
          Jet * jet = selectedJets[j];
          h1[Form("pt_%i",j)]   -> Fill(jet->pt());
@@ -187,14 +175,14 @@ int main(int argc, char * argv[])
          h1[Form("btag_%i",j)] -> Fill(jet->btag());
          
          if ( j < 2 && jet->btag() < btagmin[j] )     goodEvent = false;
-//          if ( ! isbbb )
-//          {
-//             if ( j == 2 && jet->btag() > nonbtag )    goodEvent = false; 
-//          }
-//          else
-//          {
-//             if ( j == 2 && jet->btag() < btagmin[j] ) goodEvent = false; 
-//          }
+         if ( ! signalregion_ )
+         {
+            if ( j == 2 && jet->btag() > nonbtagwp_ )    goodEvent = false; 
+         }
+         else
+         {
+            if ( j == 2 && jet->btag() < btagmin[j] ) goodEvent = false; 
+         }
       }
       
       h1["m12"] -> Fill((selectedJets[0]->p4() + selectedJets[1]->p4()).M());
@@ -207,44 +195,50 @@ int main(int argc, char * argv[])
       
       
       // Is matched?
-//       bool matched[10] = {true,true,true,true,true,true,true,true,true,true};
-//       for ( int j = 0; j < 2; ++j )
-//       {
-//          Jet * jet = selectedJets[j];
-// //         for ( auto & obj : triggerObjects )   matched = (matched && jet->matched(obj));
-//          for ( size_t io = 0; io < triggerObjects.size() ; ++io )
-//          {       
-//             if ( ! jet->matched(triggerObjects[io]) ) matched[io] = false;
-//          }
-//       }
-//       
-//       for ( size_t io = 0; io < triggerObjects.size() ; ++io )
-//       {
-//          if ( matched[io] ) ++nmatch[io];
-//          goodEvent = ( goodEvent && matched[io] );
-//       }
-//       
-//       if ( ! goodEvent ) continue;
+      bool matched[10] = {true,true,true,true,true,true,true,true,true,true};
+      for ( int j = 0; j < 2; ++j )
+      {
+         Jet * jet = selectedJets[j];
+//         for ( auto & obj : triggerObjects_ )   matched = (matched && jet->matched(obj));
+         for ( size_t io = 0; io < triggerObjects_.size() ; ++io )
+         {       
+            if ( ! jet->matched(triggerObjects_[io]) ) matched[io] = false;
+         }
+      }
+      
+      for ( size_t io = 0; io < triggerObjects_.size() ; ++io )
+      {
+         if ( matched[io] ) ++nmatch[io];
+         goodEvent = ( goodEvent && matched[io] );
+      }
+      
+      if ( ! goodEvent ) continue;
       
       ++nsel[6];
      
       // Fill histograms of passed bbnb btagging selection
-//       for ( int j = 0 ; j < (int)selectedJets.size() ; ++j )
-//       {
-//          if ( selectedJets[j]->pt() < 20. ) continue;
-//          ++njets_csv;
-//       }
-//       h1["n_csv"] -> Fill(selectedJets.size());
-//       h1["n_ptmin20_csv"] -> Fill(njets_csv);
-//       for ( int j = 0; j < 3; ++j )
-//       {
-//          Jet * jet = selectedJets[j];
-//          h1[Form("pt_%i_csv",j)]   -> Fill(jet->pt());
-//          h1[Form("eta_%i_csv",j)]  -> Fill(jet->eta());
-//          h1[Form("phi_%i_csv",j)]  -> Fill(jet->phi());
-//          h1[Form("btag_%i_csv",j)] -> Fill(jet->btag());
-//       }
-//       if ( !isbbb ) h1["m12_csv"] -> Fill((selectedJets[0]->p4() + selectedJets[1]->p4()).M());
+      for ( int j = 0 ; j < (int)selectedJets.size() ; ++j )
+      {
+         if ( selectedJets[j]->pt() < 20. ) continue;
+         ++njets_csv;
+      }
+      h1["n_csv"] -> Fill(selectedJets.size());
+      h1["n_ptmin20_csv"] -> Fill(njets_csv);
+      for ( int j = 0; j < njetsmin_; ++j )
+      {
+         Jet * jet = selectedJets[j];
+         h1[Form("pt_%i_csv",j)]   -> Fill(jet->pt());
+         h1[Form("eta_%i_csv",j)]  -> Fill(jet->eta());
+         h1[Form("phi_%i_csv",j)]  -> Fill(jet->phi());
+         h1[Form("btag_%i_csv",j)] -> Fill(jet->btag());
+      }
+      mbb = (selectedJets[0]->p4() + selectedJets[1]->p4()).M();
+      if ( !signalregion_ )
+      { 
+         h1["m12_csv"] -> Fill(mbb);
+         weight = 1;
+         tree -> Fill();
+      }
          
    }
    
@@ -252,6 +246,9 @@ int main(int argc, char * argv[])
    {
       ih1.second -> Write();
    }
+   
+   hout.Write();
+   hout.Close();
    
 // PRINT OUTS   
    
@@ -273,7 +270,7 @@ int main(int argc, char * argv[])
    cuts[3] = "Delta R(i;j)";
    cuts[4] = "Delta eta(j1;j2)";
    cuts[5] = "btagged (bbnb)";
-   if ( isbbb ) cuts[5] = "btagged (bbb)";
+   if ( signalregion_ ) cuts[5] = "btagged (bbb)";
    cuts[6] = "Matched to online j1;j2";
    
    printf ("%-23s  %10s  %10s  %10s \n", std::string("Cut flow").c_str(), std::string("# events").c_str(), std::string("absolute").c_str(), std::string("relative").c_str() ); 
@@ -294,15 +291,15 @@ int main(int argc, char * argv[])
    // Trigger objects counts   
    std::cout << std::endl;
    printf ("%-40s  %10s \n", std::string("Trigger object").c_str(), std::string("# events").c_str() ); 
-//   for ( size_t io = 0; io < triggerObjects.size() ; ++io )
+//   for ( size_t io = 0; io < triggerObjects_.size() ; ++io )
 //   {
-//      printf ("%-40s  %10d \n", triggerObjects[io].c_str(), nmatch[io] ); 
+//      printf ("%-40s  %10d \n", triggerObjects_[io].c_str(), nmatch[io] ); 
 //   }
    
    
    
    
       
-//    
-}
+   
+} //end main
 

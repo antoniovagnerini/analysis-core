@@ -23,7 +23,7 @@
 #include <boost/filesystem.hpp>
 
 using namespace analysis;
-using namespace analysis::tools;
+using namespace analysis::core;
 
 //
 // class declaration
@@ -198,15 +198,20 @@ int Analysis::triggerResult(const std::string & trig)
    return triggerResults_[trig];
 }
 
-int Analysis::triggerL1Prescale(const std::string & trig)
+int Analysis::triggerPrescale(const std::string & trig)
 {
 //   if ( t_triggerResults_ == NULL ) return -1.;
-   return triggerResultsPS_["psl1_"+trig];
+   return triggerResultsPS_["ps_"+trig];
 }
-int Analysis::triggerHLTPrescale(const std::string & trig)
+
+std::map<std::string,int> Analysis::triggerPrescale(const std::vector<std::string> & trigs)
 {
-//   if ( t_triggerResults_ == NULL ) return -1.;
-   return triggerResultsPS_["pshlt_"+trig];
+   std::map<std::string,int> ps;
+   for ( auto & trig : trigs )
+   {
+      ps[trig] = triggerPrescale(trig);
+   }
+   return ps;
 }
 
 
@@ -446,7 +451,7 @@ void Analysis::addBtagEfficiencies(const std::string & filename)
    
 }
 
-float Analysis::btagEfficiency(const analysis::tools::Jet & jet, const int & rank)
+float Analysis::btagEfficiency(const analysis::core::Jet & jet, const int & rank)
 {
    float eff = 0.;
    std::string flav;
