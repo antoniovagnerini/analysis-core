@@ -295,6 +295,7 @@ PhysicsObjectTree<GenJet>::PhysicsObjectTree() : PhysicsObjectTreeBase<GenJet>()
 }
 PhysicsObjectTree<GenJet>::PhysicsObjectTree(TChain * tree, const std::string & name) : PhysicsObjectTreeBase<GenJet>(tree, name)
 {
+
 }
 PhysicsObjectTree<GenJet>::~PhysicsObjectTree()
 {
@@ -345,6 +346,7 @@ PhysicsObjectTree<TriggerObject>::PhysicsObjectTree() : PhysicsObjectTreeBase<Tr
 }
 PhysicsObjectTree<TriggerObject>::PhysicsObjectTree(TChain * tree, const std::string & name) : PhysicsObjectTreeBase<TriggerObject>(tree, name)
 {
+  tree_  -> SetBranchAddress ("type"      , type_     ) ;      
 }
 PhysicsObjectTree<TriggerObject>::~PhysicsObjectTree() {}
 
@@ -355,6 +357,7 @@ Collection<TriggerObject>  PhysicsObjectTree<TriggerObject>::collection()
    for ( int i = 0 ; i < n_ ; ++i )
    {
       TriggerObject trig(pt_[i], eta_[i], phi_[i], e_[i]);
+      trig.type(type_[i]);
       triggers.push_back(trig);
    }
    Collection<TriggerObject> TriggerObjectCollection(triggers, name_);

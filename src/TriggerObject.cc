@@ -48,3 +48,10 @@ TriggerObject::~TriggerObject()
 //
 // member functions
 //
+// Gets
+int TriggerObject::type()                                  const { return type_;    }
+
+// Sets
+void TriggerObject::type     (const int & type)                               { type_    = type; } 
+
+   
