@@ -4,7 +4,7 @@
 #include <string>
 
 using namespace std;
-//int PlotRatiovar( string var_  )
+
 int PlotRatiovar( string var_, string varunit_ , float xlow_ ,float xhigh_ , float ylow_ ,float yhigh_ , float yRlow_ ,float yRhigh_  )
 {
   setTDRStyle();
@@ -12,21 +12,24 @@ int PlotRatiovar( string var_, string varunit_ , float xlow_ ,float xhigh_ , flo
 
   std::string var = var_;
   std::string varunit = varunit_;
-  // const std::string varlegend; 
   
-  const float xlow  = xlow_;
+  const float xlow  = xlow_; //maybe swap _ in vars
   const float xhigh = xhigh_;
   const float ylow  = ylow_;
   const float yhigh = yhigh_;
   const float yRlow  = yRlow_;
   const float yRhigh = yRhigh_;
 
+  float lumi = 5.0 ;// in fb-1
+  std::vector<float> era_lumis = {9.787, 4.324, 4.275, 5.111, 4.530};  //eras C,D,Ev1,Ev2,F  map better
+  std::vector<float> era_sf ;
+  for( float era_lumi : era_lumis ) {  era_sf.push_back( lumi/era_lumi ) ; }
 
-  TFile * f1 = new TFile( "ROOTFILES/histograms_2017C-v.root","OLD");
-  TFile * f2 = new TFile( "ROOTFILES/histograms_2017D-v1.root","OLD");
-  TFile * f3 = new TFile( "ROOTFILES/histograms_2017E-oldinj.root","OLD");
-  TFile * f3bis = new TFile( "ROOTFILES/histograms_2017E-newinj.root","OLD");
-  TFile * f4 = new TFile( "ROOTFILES/histograms_2017F-v1.root","OLD");
+  TFile * f1 = new TFile( "ROOTFILES/histograms_2017C.root","OLD");  //rewrite as in histo2d
+  TFile * f2 = new TFile( "ROOTFILES/histograms_2017D.root","OLD");
+  TFile * f3 = new TFile( "ROOTFILES/histograms_2017E-v1.root","OLD");
+  TFile * f3bis = new TFile( "ROOTFILES/histograms_2017E-v2.root","OLD");
+  TFile * f4 = new TFile( "ROOTFILES/histograms_2017F.root","OLD");
 
   TH1F * var_0C = (TH1F*)f1->Get(var.c_str());
   TH1F * var_0D = (TH1F*)f2->Get(var.c_str());
@@ -34,21 +37,34 @@ int PlotRatiovar( string var_, string varunit_ , float xlow_ ,float xhigh_ , flo
   TH1F * var_0Ebis = (TH1F*)f3bis->Get(var.c_str());
   TH1F * var_0F = (TH1F*)f4->Get(var.c_str());
 
+  var_0C -> Scale(era_sf[0]);
+  var_0D -> Scale(era_sf[1]);
+  var_0E -> Scale(era_sf[2]);
+  var_0Ebis -> Scale(era_sf[3]);
+  var_0F -> Scale(era_sf[4]);
+
+  if ( var == "deepcsv_0" ||  var == "deepcsv_1" ||  var == "deepcsv_2" ) 
+    {
+     var_0C -> Rebin(4);
+     var_0D -> Rebin(4);
+     var_0E -> Rebin(4);
+     var_0Ebis -> Rebin(4);
+     var_0F -> Rebin(4);
+    }
+
   std::cout << var << " "  << var.length() <<std::endl; 
   float legx;  
   if (var.length() < 10) legx = 0.715; //0.655
   else legx = 0.715 + (var.length()-10)*0.02; //0.655
   
-  //TLegend * leg1 = new TLegend(0.1926503,0.550778,legx,0.8816568);
-  TLegend * leg1 = new TLegend(0.3819599,0.6039126,legx,0.9347905);
-  // TLegend * leg2 = new TLegend(0.7561247,0.7255245,0.9443207,0.9460731);  
+  //  TLegend * leg1 = new TLegend(0.3819599,0.6039126,legx,0.9347905);
+
+  TLegend *leg1 = new TLegend(0.6403118,0.6128194,0.9732739,0.9425474);
   TLegend * leg2 = new TLegend(0.7120,0.6313878,0.9777283,0.9433835);
   TCanvas * c1 = new TCanvas("c1","",900,1000); //600,700
   
   //PAD1
-  TPad* pad1 = new TPad("pad_top","Dijet m_{12} bbmunb distribution",0,1 - relative_size,1,1);
-  // pad1->SetTopMargin(gStyle->GetPadTopMargin() * 1. / (relative_size));
-  //pad1->SetBottomMargin(0.05); //0.03
+  TPad* pad1 = new TPad("pad_top","",0,1 - relative_size,1,1);
   pad1->Range(0.5621891,1.838102,1.008955,5.356941);
   pad1->SetLeftMargin(0.08463252);
   pad1->SetRightMargin(0.02004454);
@@ -69,17 +85,17 @@ int PlotRatiovar( string var_, string varunit_ , float xlow_ ,float xhigh_ , flo
 
   var_0D -> SetLineColor(kRed);
   var_0D -> Draw("same");
-  var_0E -> SetLineColor(kGreen+2);
-  var_0E -> Draw("same");
-  var_0Ebis -> SetLineColor(kGreen-1);
-  var_0Ebis -> Draw("same");
+  // var_0E -> SetLineColor(kGreen+2);
+  // var_0E -> Draw("same");
+  // var_0Ebis -> SetLineColor(kGreen-1);
+  // var_0Ebis -> Draw("same");
   var_0F -> SetLineColor(kOrange);
   var_0F -> Draw("same");
    
   leg1->AddEntry(var_0C,(var + " Era2017C").c_str(),"lp");
   leg1->AddEntry(var_0D,(var + " Era2017D").c_str(),"lp");
-  leg1->AddEntry(var_0E,(var + " Era2017E oldIS").c_str(),"lp");
-  leg1->AddEntry(var_0Ebis,(var + " Era2017E newIS").c_str(),"lp");
+  // leg1->AddEntry(var_0E,(var + " Era2017E-v1").c_str(),"lp");
+  // leg1->AddEntry(var_0Ebis,(var + " Era2017E-v2").c_str(),"lp");
   leg1->AddEntry(var_0F,(var + " Era2017F").c_str(),"lp");
   leg1->SetBorderSize(1);
   //leg1->SetFontSize(18);
@@ -132,7 +148,7 @@ int PlotRatiovar( string var_, string varunit_ , float xlow_ ,float xhigh_ , flo
   ratio->DrawCopy("");
 
   //Ratio plot 1 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=                                                                                                                     
-  ratio1->Sumw2();
+  /*  ratio1->Sumw2();
   ratio1->Divide(var_0C);
   ratio1->SetMarkerStyle(21);
   ratio1-> SetLineColor(kGreen+2);
@@ -172,7 +188,7 @@ int PlotRatiovar( string var_, string varunit_ , float xlow_ ,float xhigh_ , flo
   ratio1bis->GetXaxis()->SetLabelSize(20);
   ratio1bis->Draw("same");
   fixOverlay();
-
+  */
   //Ratio plot 2 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=                                                                                                                     
   ratio2->Sumw2();
   ratio2->Divide(var_0C);
@@ -196,8 +212,8 @@ int PlotRatiovar( string var_, string varunit_ , float xlow_ ,float xhigh_ , flo
 
   //LEGEND
   leg2->AddEntry(ratio,  "EraD / EraC","pl");
-  leg2->AddEntry(ratio1, "EraE oldIS/ EraC","pl");
-  leg2->AddEntry(ratio1bis, "EraE newIS/ EraC","pl");
+  // leg2->AddEntry(ratio1, "EraE-v1/ EraC","pl");
+  // leg2->AddEntry(ratio1bis, "EraE-v2/ EraC","pl");
   leg2->AddEntry(ratio2, "EraF / EraC","pl");
   leg2->SetBorderSize(1);
   leg2->SetTextSize(0.05);
