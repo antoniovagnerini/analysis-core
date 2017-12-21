@@ -68,18 +68,18 @@ int main(int argc, char * argv[])
    h1["n_ptmin20"]    = new TH1F("n_ptmin20" , "" , 30, 0, 30);                                                 // # jet pT>20    
    h1["n_ptmin20_btagsel"] = new TH1F("n_ptmin20_btagsel" , "" , 30, 0, 30);                                    //             after btag sel 
    h1["n_ptmin20_mujsel"]  = new TH1F("n_ptmin20_mujsel"  , "" , 30, 0, 30);                                    //             after mujsel
-   h2["n_ptmin20_phivseta"]         = new TH2F("n_ptmin20_phivseta","", 25, -2.5, 2.5, 20, -4.0, 4.0 );         // # jet pT>20 in bins of eta and phi 
-   h2["n_ptmin20_btagsel_phivseta"] = new TH2F("n_ptmin20_btagsel_phivseta","", 25, -2.5, 2.5, 20, -4.0, 4.0 ); //                   & after btag sel
+   h2["n_ptmin20_phivseta"]         = new TH2F("n_ptmin20_phivseta","", 25, -2.5, 2.5, 21, -3.15, 3.15 );         // # jet pT>20 in bins of eta and phi 
+   h2["n_ptmin20_btagsel_phivseta"] = new TH2F("n_ptmin20_btagsel_phivseta","", 25, -2.5, 2.5, 21, -3.15, 3.15 ); //                   & after btag sel
 
    // Muons -----------------------------------------------------------------------------------
 
    h1["n_muons"]           = new TH1F("n_muons"  , "" , 30, 0, 30);                           // # muons passing ID
-   h2["n_muons_phivseta"]  = new TH2F("n_muons_phivseta","", 25, -2.5, 2.5, 20, -4.0, 4.0 );  //         passing kinematic
+   h2["n_muons_phivseta"]  = new TH2F("n_muons_phivseta","", 25, -2.5, 2.5, 21, -3.15, 3.15 );  //         passing kinematic
 
    //after dR selection
    h1["pt_mu"]         = new TH1F("pt_mu"    , "" , 100, 0, 300);  
    h1["eta_mu"]        = new TH1F("eta_mu   ", "" , 100, -5, 5);  
-   h2["eta_phi_mu"]    = new TH2F("eta_phi_mu","", 25, -2.5, 2.5, 20, -4.0, 4.0 ); 
+   h2["eta_phi_mu"]    = new TH2F("eta_phi_mu","", 25, -2.5, 2.5, 21, -3.15, 3.15 ); 
    h1["dR_muj"]        = new TH1F("dR_muj" , "" , 100, 0, 0.5);   
    h1["dR_muj0"]       = new TH1F("dR_muj0", "" , 100, 0, 0.5);
    h1["dR_muj1"]       = new TH1F("dR_muj1", "" , 100, 0, 0.5);
@@ -105,7 +105,7 @@ int main(int argc, char * argv[])
       h1[Form("phi_%i",i)]        = new TH1F(Form("phi_%i",i) , "" , 100, -4, 4);
       h1[Form("csv_%i",i)]        = new TH1F(Form("csv_%i",i) , "" , 200, 0, 1);
       h1[Form("deepcsv_%i",i)]    = new TH1F(Form("deepcsv_%i",i) , "" , 200, 0, 1);
-      h2[Form("eta_phi_%i",i)]       = new TH2F(Form("eta_phi_%i",i) , "" , 25, -2.5, 2.5, 20, -4.0, 4.0 );
+      h2[Form("eta_phi_%i",i)]       = new TH2F(Form("eta_phi_%i",i) , "" , 25, -2.5, 2.5, 21, -3.15, 3.15 );
       
       // after btagsel sel 
       h1[Form("pt_%i_btagsel",i)]     = new TH1F(Form("pt_%i_btagsel",i) , "" , 100, 0, 1000);
@@ -113,7 +113,7 @@ int main(int argc, char * argv[])
       h1[Form("phi_%i_btagsel",i)]    = new TH1F(Form("phi_%i_btagsel",i) , "" , 100, -4, 4);
       h1[Form("csv_%i_btagsel",i)]    = new TH1F(Form("csv_%i_btagsel",i) , "" , 200, 0, 1);  
       h1[Form("deepcsv_%i_btagsel",i)]= new TH1F(Form("deepcsv_%i_btagsel",i) , "" , 200, 0, 1);
-      h2[Form("eta_phi_%i_btagsel",i)] = new TH2F(Form("eta_phi_%i_btagsel",i) , "" , 25, -2.5, 2.5, 20, -4.0, 4.0 );
+      h2[Form("eta_phi_%i_btagsel",i)] = new TH2F(Form("eta_phi_%i_btagsel",i) , "" , 25, -2.5, 2.5, 21, -3.15, 3.15 );
       
       // after mujet sel
       h1[Form("pt_%i_mujsel",i)]     = new TH1F(Form("pt_%i_mujsel",i) , "" , 100, 0, 1000);

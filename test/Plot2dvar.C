@@ -10,12 +10,16 @@ void Plot2dvar(string var_)
   gStyle->SetOptStat(0);
 
   std::vector<std::string> eras;
-  eras.push_back("C-v");
-  eras.push_back("D-v1");
-  eras.push_back("E-oldinj");
-  eras.push_back("E-newinj");
-  eras.push_back("F-v1");
+  eras.push_back("C");
+  eras.push_back("D");
+  eras.push_back("E-v1");
+  eras.push_back("E-v2");
+  eras.push_back("F");
 
+  float lumi = 5.0 ;// in fb-1
+  std::vector<float> era_lumis = {9.787, 4.324, 4.275, 5.111, 4.530};  //eras C,D,Ev1,Ev2,F  map better
+  std::vector<float> era_sf ;
+  for( float era_lumi : era_lumis ) {  era_sf.push_back( lumi/era_lumi ) ; }
 
   TFile * f[20]; // signal
 
@@ -25,6 +29,9 @@ void Plot2dvar(string var_)
   
      TH2F * hvar = (TH2F*) f[e]->Get(var.c_str());  
      std::cout << var << " "  << var.length() <<std::endl; 
+     
+     hvar-> Scale(era_sf[e]);
+     //     hvar-> RebinY(2);
 
      TCanvas *c1 = new TCanvas("c1", "c1",2067,115,1310,869); //2067,113
      c1->SetFillColor(0);
@@ -38,7 +45,7 @@ void Plot2dvar(string var_)
      hvar -> GetYaxis()->SetTitle("Phi");
      hvar -> GetYaxis()->SetTitleOffset(1.05);
      hvar -> GetXaxis()->SetRangeUser(-2.3,2.3);
-     hvar -> GetYaxis()->SetRangeUser(-3.,3.);
+     hvar -> GetYaxis()->SetRangeUser(-3.14,3.14);
      hvar ->Draw("colz");
    
 
